@@ -5,12 +5,8 @@ import time
 import random
 from PIL import Image, ImageTk
 
-
-
-
 testmode = True
-
-
+gpsOn = False
 
 
 class frameSetUp:
@@ -21,19 +17,34 @@ class frameSetUp:
     aRow = {}
     wSet = {}
     speed = 0
+    rpm = 0
+    speedUp = 0
+    curGear = "N"
 
     def __init__(self):
         tHeight = screenH * 0.90
         self.tFrame = Frame(gui, height=tHeight)
-        self.bFrame = Frame(gui, bg='red')
+        #self.bFrame = Frame(gui)
         self.tFrame.grid(row=0, column=0, sticky='nesw')
-        self.bFrame.grid(row=1, column=0, sticky='nesw')
+        #self.bFrame.grid(row=1, column=0, sticky='nesw')
         Grid.columnconfigure(gui, 0, weight=1)
         Grid.rowconfigure(gui, 0, weight=1)
     
         self.setFrameBoxes()
         self.clockRun()
-        
+        self.gearSet()
+
+        for child in gui.winfo_children():
+            child.config(bg="black")
+            for child2 in child.winfo_children():
+                for child3 in child2.winfo_children():
+                    try:
+                        child3.config(bg="black", fg="white")
+                        child3.grid(sticky="nesw")
+                    except:
+                        pass
+
+
         if testmode == True:
             self.rTest()
         
@@ -61,43 +72,83 @@ class frameSetUp:
         gui.after(1000, self.clockRun)
 
 
+    def gearSet(self):
+        self.gN = Image.open('index/gear/gN.png')
+        self.g1 = Image.open('index/gear/g1.png')
+        self.g2 = Image.open('index/gear/g2.png')
+        self.g3 = Image.open('index/gear/g3.png')
+        self.g4 = Image.open('index/gear/g4.png')
+        self.g5 = Image.open('index/gear/g5.png')        
+        self.g6 = Image.open('index/gear/g6.png')
+        self.gN = ImageTk.PhotoImage(self.gN)
+        self.g1 = ImageTk.PhotoImage(self.g1)
+        self.g2 = ImageTk.PhotoImage(self.g2)
+        self.g3 = ImageTk.PhotoImage(self.g3)
+        self.g4 = ImageTk.PhotoImage(self.g4)
+        self.g5 = ImageTk.PhotoImage(self.g5)
+        self.g6 = ImageTk.PhotoImage(self.g6)
+
+        one = 100
+        self.gNImage = self.canvasG.create_image(one, one+20, state="hidden", image = self.gN)
+        self.g1Image = self.canvasG.create_image(one, one+20, state="hidden", image = self.g1)
+        self.g2Image = self.canvasG.create_image(one, one+20, state="hidden", image = self.g2)
+        self.g3Image = self.canvasG.create_image(one, one+20, state="hidden", image = self.g3)
+        self.g4Image = self.canvasG.create_image(one, one+20, state="hidden", image = self.g4)
+        self.g5Image = self.canvasG.create_image(one, one+20, state="hidden", image = self.g5)
+        self.g6Image = self.canvasG.create_image(one, one+20, state="hidden", image = self.g6)
+        
+        self.gearList = [self.gNImage, self.g1Image, self.g2Image, self.g3Image, self.g4Image, self.g5Image, self.g6Image] 
+
+
+
     def rTest(self):
-        x = randint(0,10)
-        #self.l1.config(text=x)
-        #self.l2.config(text=x*234)
+        ## If GPS is onj
+        if gpsOn == True:
+            gpsDir = ['North', 'East', 'South', 'West']
+            self.dir.config(text=random.choice(gpsDir))
+            nTurn = ['Straight', 'Left', 'Right', 'U-Turn']
+            self.b5.config(text=random.choice(nTurn))
 
-        gpsDir = ['North', 'East', 'South', 'West']
-        self.dir.config(text=random.choice(gpsDir))
+        gChoice = random.choice(self.gearList)
+        
+        for each in self.gearList:
+            self.canvasG.itemconfigure(each, state="hidden")
+        self.canvasG.itemconfigure(gChoice, state="normal")
 
-        nTurn = ['Straight', 'Left', 'Right', 'U-Turn']
-        self.b5.config(text=random.choice(nTurn))
+        self.speed = self.speed + 1     
+        self.rpm = self.rpm + 50
+        
+        if self.rpm >= 18000:
+            self.rpm = 0
 
-        gearList = ['N', '1', '2', '3','4','5','6']         ### For testing
-        gChoice = random.choice(gearList)
-        self.gear.config(text=gChoice)
-        if gChoice == "N":
-            self.gear.config(bg="green")
-        else:
-            self.gear.config(bg="grey")
+        if self.speed == 120:
+            self.speed = 1
 
+        needleA = 135 - (self.speed * 2.25)     # 360 - 90 = 270   270/120 = 2.25
+        needleB = 135 - (self.rpm * 0.015)    #360 - 90 = 270    270/18000 = 0.015
 
-        self.speed = randint(0,120)    ### For testing speed
-        needleA = 135 - (self.speed * 2.25)
+        self.canvas.delete("needle")
+
         self.speedNeedle2 = ImageTk.PhotoImage(self.speedNeedle.rotate(needleA))
-        self.cImg2 = self.canvas.create_image(self.canvasW/2,self.canvasH/2, image = self.speedNeedle2)
-
-
-        self.barSpeed['value'] = abs(self.speed)        
-        self.speedNumber.config(text=abs(self.speed))
+        self.canvas.create_image(self.canvasW/2,self.canvasH/2, tag=("needle"), image = self.speedNeedle2)
         
-        rpm = randint(5000, 18000)         ### For testing
-        self.barRPM['value'] = rpm
+        self.rpmNeedle2 = ImageTk.PhotoImage(self.rpmNeedle.rotate(needleB))
+        self.canvas.create_image(self.canvasW/2,self.canvasH/2, tag=("needle"), image = self.rpmNeedle2)
 
-        if rpm > 10000:
-            self.barRPMNumber.config(bg="red", text=rpm)
+        if self.speed < 80:
+            self.canvas.itemconfig(self.clutchOn, state="normal")
         else:
-            self.barRPMNumber.config(bg="white", text=rpm)
+            self.canvas.itemconfig(self.clutchOn, state="hidden")
         
+        
+        if self.speed < 40:
+            self.canvas.itemconfig(self.brakeOn, state="normal")
+        else:
+            self.canvas.itemconfig(self.brakeOn, state="hidden")
+        
+        
+        
+        self.speedNumber.config(text=abs(self.speed))
         self.temp1.config(text=randint(20,150))
         self.temp2.config(text=randint(20,150))
         self.temp3.config(text=randint(20,150))
@@ -107,61 +158,70 @@ class frameSetUp:
         self.temp2I.config(text=randint(20,150))
         self.temp3I.config(text=randint(20,150))
         self.temp4I.config(text=randint(20,150))
-        gui.after(250, self.rTest)
+        gui.after(10, self.rTest)
         
+
         
     def setFrameBoxes(self):
-
         self.aRow[0] = StringVar()
         self.aRow[0] = Frame(self.tFrame)
-        self.aRow[0].grid(row=0, column=0, columnspan=5)
+        self.aRow[0].grid(row=0, column=0, columnspan=5, pady=20)
         self.lTime = Label(self.aRow[0], font=("", 30))
         self.lTime.grid(row=0, column=0)
 
-
-        self.wSet = Frame(self.tFrame, width=1000)
-        self.wSet.grid(row=1, column=0, columnspan=5)
-
+        #self.wSet = Frame(self.tFrame, width=1000)
+        #self.wSet.grid(row=1, column=0, columnspan=5)
 
         for i in range(0,5):
             self.bRow[i] = StringVar()
             self.bRow[i] = Frame(self.tFrame)
-            self.bRow[i].grid(row=2, column=i)
-            self.cRow[i] = StringVar()
-            self.cRow[i] = Frame(self.tFrame, width=12)
-            self.cRow[i].grid(row=3, column=i)
-            self.dRow[i] = StringVar()
-            self.dRow[i] = Frame(self.tFrame)
-            self.dRow[i].grid(row=4, column=i)
+            self.bRow[i].grid(row=1, column=i)
+            #self.cRow[i] = StringVar()
+            #self.cRow[i] = Frame(self.tFrame, width=12)
+            #self.cRow[i].grid(row=2, column=i)
+            #self.dRow[i] = StringVar()
+            #self.dRow[i] = Frame(self.tFrame)
+            #self.dRow[i].grid(row=3, column=i)
             self.eRow[i] = StringVar()
             self.eRow[i] = Frame(self.tFrame)
-            self.eRow[i].grid(row=5, column=i)
-            if i == 3:
-                self.eRow[i].grid(columnspan=2)
-                self.dRow[i].grid(columnspan=2)
+            self.eRow[i].grid(row=4, column=i)
+            
+        self.cRow[0] = StringVar()
+        self.cRow[0] = Frame(self.tFrame, width=12)
+        self.cRow[0].grid(row=2, column=0)
+        
+        self.cRow[1] = StringVar()
+        self.cRow[1] = Frame(self.tFrame, width=12)
+        self.cRow[1].grid(row=2, column=1)
 
+        self.cRow[2] = StringVar()
+        self.cRow[2] = Frame(self.tFrame, width=12)
+        self.cRow[2].grid(row=2, column=2)
+
+        self.cRow[3] = StringVar()
+        self.cRow[3] = Frame(self.tFrame, width=12)
+        self.cRow[3].grid(row=2, column=3, columnspan=2, rowspan=5, sticky="nesw")
 
         ###  Navigation
-        self.b1 = Label(self.bRow[0], text="")
-        self.b1.grid(row=0, column=0)
 
-        self.b2 = Label(self.bRow[1], text="Current Road", font=("", 30))
-        self.b2.grid(row=0, column=0)
+        if gpsOn == True:
 
-        self.dir = Label(self.bRow[2], text="Direction", font=("", 30), padx=20, width=7)
-        self.dir.grid(row=0, column=0)
+            self.b2 = Label(self.bRow[0], text="Current Road", font=("", 30))
+            self.b2.grid(row=0, column=0)
 
-        self.b4 = Label(self.bRow[3], text="Dn", font=("", 30))
-        self.b4.grid(row=0, column=0)
+            self.dir = Label(self.bRow[1], text="Direction", font=("", 30), padx=20, width=7)
+            self.dir.grid(row=0, column=0)
 
-        self.b5 = Label(self.bRow[4], text="Next", font=("", 30), width=7, anchor=N)
-        self.b5.grid(row=0, column=0)
-        self.b6 = Label(self.bRow[4], text="Next road", font=("", 30), width=20, anchor=W)
-        self.b6.grid(row=0, column=1)
+            self.b4 = Label(self.bRow[2], text="Distance", font=("", 30))
+            self.b4.grid(row=0, column=0)
 
+            self.b5 = Label(self.bRow[3], text="Next", font=("", 30), width=7, anchor=N)
+            self.b5.grid(row=0, column=0)
+
+            self.b6 = Label(self.bRow[4], text="Next road", font=("", 30), bg="red")
+            self.b6.grid(row=0, column=0)
 
         ######  Temps
-
         self.temp1 = Label(self.cRow[0], text='Engine Temp 1: ', anchor=W)
         self.temp1.grid(row=0, column=0, sticky="nesw")
         self.temp2 = Label(self.cRow[0], text='Engine Temp 2: ', anchor=W)
@@ -171,13 +231,13 @@ class frameSetUp:
         self.temp4 = Label(self.cRow[0], text='Engine Temp 4: ', anchor=W)
         self.temp4.grid(row=3, column=0, sticky="nesw")
 
-        self.temp1 = Label(self.cRow[0], anchor=E, width=3)
+        self.temp1 = Label(self.cRow[0], anchor=N, width=3)
         self.temp1.grid(row=0, column=1, sticky="nesw")
-        self.temp2 = Label(self.cRow[0], anchor=E, width=3)
+        self.temp2 = Label(self.cRow[0], anchor=N, width=3)
         self.temp2.grid(row=1, column=1, sticky="nesw")
-        self.temp3 = Label(self.cRow[0], anchor=E, width=3)
+        self.temp3 = Label(self.cRow[0], anchor=N, width=3)
         self.temp3.grid(row=2, column=1, sticky="nesw")
-        self.temp4 = Label(self.cRow[0], anchor=E, width=3)
+        self.temp4 = Label(self.cRow[0], anchor=N, width=3)
         self.temp4.grid(row=3, column=1, sticky="nesw")
 
         self.temp1It = Label(self.cRow[1], text='Intake Temp 1: ', anchor=W)
@@ -189,13 +249,13 @@ class frameSetUp:
         self.temp4It = Label(self.cRow[1], text='Intake Temp 4: ', anchor=W)
         self.temp4It.grid(row=3, column=0, sticky="nesw")
 
-        self.temp1I = Label(self.cRow[1], anchor=E, width=3)
+        self.temp1I = Label(self.cRow[1], anchor=N, width=3)
         self.temp1I.grid(row=0, column=1, sticky="nesw")
-        self.temp2I = Label(self.cRow[1], anchor=E, width=3)
+        self.temp2I = Label(self.cRow[1], anchor=N, width=3)
         self.temp2I.grid(row=1, column=1, sticky="nesw")
-        self.temp3I = Label(self.cRow[1], anchor=E, width=3)
+        self.temp3I = Label(self.cRow[1], anchor=N, width=3)
         self.temp3I.grid(row=2, column=1, sticky="nesw")
-        self.temp4I = Label(self.cRow[1], anchor=E, width=3)
+        self.temp4I = Label(self.cRow[1], anchor=N, width=3)
         self.temp4I.grid(row=3, column=1, sticky="nesw")
 
         self.m1 = Label(self.cRow[2], text='?? 1: ', anchor=W)
@@ -207,58 +267,39 @@ class frameSetUp:
         self.m4 = Label(self.cRow[2], text='?? 4: ', anchor=W)
         self.m4.grid(row=3, column=0, sticky="nesw")
 
-        self.m1 = Label(self.cRow[2], anchor=E, width=3)
+        self.m1 = Label(self.cRow[2], anchor=N, width=3)
         self.m1.grid(row=0, column=1, sticky="nesw")
-        self.m2 = Label(self.cRow[2], anchor=E, width=3)
+        self.m2 = Label(self.cRow[2], anchor=N, width=3)
         self.m2.grid(row=1, column=1, sticky="nesw")
-        self.m3 = Label(self.cRow[2], anchor=E, width=3)
+        self.m3 = Label(self.cRow[2], anchor=N, width=3)
         self.m3.grid(row=2, column=1, sticky="nesw")
-        self.m4 = Label(self.cRow[2], anchor=E, width=3)
+        self.m4 = Label(self.cRow[2], anchor=N, width=3)
         self.m4.grid(row=3, column=1, sticky="nesw")
 
+        thisFont=("System", 18)
 
-
+        for i in self.cRow:
+            self.cRow[i].grid(padx=10)
+            for each in self.cRow[i].winfo_children():
+                each.config(font=thisFont)
+                each.grid(ipadx=2, ipady=2)
+        '''
         for i in range(3):
             for child in self.cRow[i].winfo_children():
-                child.config(font=("",20))
-         
-        ######  RPM
-        """
-        self.dRow[3] = StringVar()
-        self.dRow[3] = Frame(self.tFrame)
-        self.dRow[3].grid(row=5, column=3, rowspan=1, columnspan=2, sticky='nesw') 
-        """     
-        self.s = ttk.Style()
-        self.s.theme_use('clam')
-        self.s.configure("red.Horizontal.TProgressbar", troughcolor='Red', background='Green')
-        self.barSpeed = ttk.Progressbar(self.dRow[3], style="red.Horizontal.TProgressbar", orient=HORIZONTAL, length=500, maximum=100)
-        self.barSpeed.grid(row=0, column=0, padx=10, pady=10, ipady=10)
-        self.barSpeed['value'] = 0
-
-        self.barRPM = ttk.Progressbar(self.dRow[3], style="red.Horizontal.TProgressbar", orient=HORIZONTAL, length=500, maximum=18000)
-        self.barRPM.grid(row=1, column=0, padx=10, pady=10, ipady=10)
-        self.barRPM['value'] = 0
-        self.barRPMNumber = Label(self.dRow[3], text="23432", font=("System", 30))
-        self.barRPMNumber.grid(row=2, column=0, columnspan=2, sticky='nesw')
-
-
-
+                child.config(font=("",20), bg="black", fg="yellow")
+        '''
 
 
         ##### Gear
-        self.eRow[0].config(relief='sunken')
-        self.gear = Label(self.eRow[0], font=('System',75), text='fdf', relief='solid')
-        self.gear.grid(row=0, column=0, sticky='nesw')
-        
+
+        self.canvasG = Canvas(self.eRow[0], bg="black", width=200, highlightthickness=0)
+        self.canvasG.grid(row=0, column=0, sticky="n")
+
         self.speedNumber = Label(self.eRow[1], text="speed", font=("System", 40))
         self.speedNumber.grid(row=0, column=0, sticky='nesw')
         Label(self.eRow[1], text="MPH").grid(row=1, column=0, sticky=N)
         Label(self.eRow[2], text="MPH").grid(row=1, column=0, sticky=N)
     
-        
-        for i in range(0,4):
-            Label(self.dRow[i], text="HHHHHHHHHHHHH").grid(row=0, column=0, sticky='nesw')
-        
         ### Speed Image
 
         ## MATH!!!!!!!
@@ -267,13 +308,50 @@ class frameSetUp:
 
         self.speedB = Image.open('index/speedBackT.png')
         self.speedNeedle = Image.open('index/needleT.png')
+        self.rpmNeedle = Image.open('index/needleRPMT.png')
+
+        #self.speedB = self.speedB.resize((self.speedB.width * 2, self.speedB.height * 2))
+        
+        self.speedB = self.speedB.resize((int(screenW / 2), int(screenW / 2)))
+        self.speedNeedle = self.speedNeedle.resize((int(screenW / 2), int(screenW / 2)))
+        self.rpmNeedle = self.rpmNeedle.resize((int(screenW / 2), int(screenW / 2)))
+
         self.speedB2 = ImageTk.PhotoImage(self.speedB)
+
         self.canvasW = self.speedB2.width()
         self.canvasH = self.speedB2.height()
 
-        self.canvas = Canvas(self.eRow[3], width=self.canvasW, height=self.canvasH)
+        self.canvas = Canvas(self.cRow[3], width=self.canvasW, height=self.canvasH, highlightthickness=0, bg="black")
         self.canvas.grid(row=0, column=0)
         self.cImg = self.canvas.create_image(self.canvasW/2,self.canvasH/2, image = self.speedB2)
+
+
+
+
+
+        ##### Clutch / Brake
+        self.clutch = Image.open('index/clutchT.png')
+        self.brake = Image.open('index/brakeT.png')
+
+        self.clutch = self.clutch.resize((int(screenW / 2), int(screenW / 2)))
+        self.brake = self.brake.resize((int(screenW / 2), int(screenW / 2)))
+        self.clutch = ImageTk.PhotoImage(self.clutch)
+        self.brake = ImageTk.PhotoImage(self.brake)
+
+        self.clutchOn = self.canvas.create_image(self.canvasW/2,self.canvasH/2, state="hidden", image = self.clutch)
+        self.brakeOn = self.canvas.create_image(self.canvasW/2,self.canvasH/2, state="hidden", image = self.brake)
+
+
+
+
+
+
+
+
+
+
+
+
 
         '''
         create_arc(bbox, options)
@@ -288,7 +366,7 @@ class frameSetUp:
         '''
 
 
-        frameList = [self.aRow, self.bRow, self.dRow, self.eRow]
+        frameList = [self.aRow, self.eRow]
 
         for i in frameList:
             for each in i:
