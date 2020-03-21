@@ -244,8 +244,6 @@ class frameSetUp:
         else:
             self.canvas.itemconfig(self.cImgRed, state="hidden")
             
-
-
         self.speedNumber.config(text=abs(self.speed))
         self.temp1.config(text=randint(20,150))
         self.temp2.config(text=randint(20,150))
